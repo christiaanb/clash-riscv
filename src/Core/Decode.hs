@@ -154,7 +154,7 @@ data DestRegSource
     = SourceALU
     | SourceMem
     | SourceSpec
-    deriving (Show)
+    deriving (Show, Generic, NFDataX)
 
 decodeDestRegSource instr
     | iType instr || rType instr || auipc instr = SourceALU

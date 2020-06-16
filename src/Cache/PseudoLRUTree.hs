@@ -5,6 +5,7 @@ module Cache.PseudoLRUTree where
 import Clash.Prelude
 import Data.Singletons.Prelude (Apply, TyFun, type (@@))
 import Data.Proxy
+import Data.Kind (Type)
 
 --
 --Combined get and update oldest
@@ -25,7 +26,7 @@ updateOldestWay' recurse (node :> tree) = (node :> oldestIdx', updatedTree)
 updateOldestBaseCase :: Vec 1 Bool -> (Vec 1 Bool, Vec 1 Bool)
 updateOldestBaseCase x = (x, map not x)
 
-data Step (f :: TyFun Nat *) :: *
+data Step (f :: TyFun Nat Type) :: Type
 type instance Apply Step n = Vec ((2 ^ (n + 1)) - 1) Bool -> (Vec (n + 1) Bool, Vec ((2 ^ (n + 1)) - 1) Bool)
 
 updateOldestWay :: forall m n. (n ~ (m + 1), KnownNat m) => Vec ((2 ^ n) - 1) Bool -> (Vec n Bool, Vec ((2 ^ n) - 1) Bool)
@@ -52,7 +53,7 @@ getOldestWay' recurse (node :> tree) = node :> oldestIdx'
     branches :: Vec 2 (Vec ((2 ^ n) - 1) Bool) = unconcat (subSNat (powSNat (SNat @ 2) (SNat @ n)) (SNat @ 1)) tree
     oldestIdx'                                 = recurse (branches !! node)
 
-data Step2 (f :: TyFun Nat *) :: *
+data Step2 (f :: TyFun Nat Type) :: Type
 type instance Apply Step2 n = Vec ((2 ^ (n + 1)) - 1) Bool -> Vec (n + 1) Bool
 
 getOldestWay :: forall m n. (n ~ (m + 1), KnownNat m) => Vec ((2 ^ n) - 1) Bool -> Vec n Bool
@@ -81,7 +82,7 @@ updateWay' recurse (this :> rest) (_ :> tree) = updatedTree
     updatedSubTree                             = recurse rest (branches !! this)
     updatedTree                                = not this :> concat (replace this updatedSubTree branches)
 
-data Step3 (f :: TyFun Nat *) :: *
+data Step3 (f :: TyFun Nat Type) :: Type
 type instance Apply Step3 n = Vec (n + 1) Bool -> Vec ((2 ^ (n + 1)) - 1) Bool -> Vec ((2 ^ (n + 1)) - 1) Bool
 
 updateWay :: forall m n. (n ~ (m + 1), KnownNat m) => Vec n Bool -> Vec ((2 ^ n) - 1) Bool -> Vec ((2 ^ n) - 1) Bool

@@ -34,7 +34,7 @@ data ToDataMem = ToDataMem {
     writeAddress :: Unsigned 32,
     writeData    :: BitVector 32,
     writeStrobe  :: BitVector 4
-} deriving (Show, Generic, ShowX)
+} deriving (Show, Generic, ShowX, NFDataX)
 
 calcForwardingAddress :: Index 32 -> BitVector 32 -> BitVector 32 -> ForwardingSource
 calcForwardingAddress sourceAddr instr_2 instr_3
@@ -43,12 +43,12 @@ calcForwardingAddress sourceAddr instr_2 instr_3
     | unpack (rd instr_3) == sourceAddr && enableRegWrite instr_3 = ForwardingSourceMem
     | otherwise                                                   = NoForwarding
 
-topEntity :: HiddenClockReset dom gated sync => Signal dom FromInstructionMem -> Signal dom FromDataMem -> (Signal dom ToInstructionMem, Signal dom ToDataMem)
+topEntity :: HiddenClockResetEnable dom => Signal dom FromInstructionMem -> Signal dom FromDataMem -> (Signal dom ToInstructionMem, Signal dom ToDataMem)
 topEntity fim fdm = (tim, tdm)
     where (tim, tdm, _) = pipeline fim fdm
 
 pipeline
-    :: forall dom sync gated. HiddenClockReset dom gated sync
+    :: forall dom sync gated. HiddenClockResetEnable dom
     => Signal dom FromInstructionMem
     -> Signal dom FromDataMem
     -> (Signal dom ToInstructionMem, Signal dom ToDataMem, Signal dom D.PipelineState)

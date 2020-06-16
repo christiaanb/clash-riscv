@@ -3,6 +3,7 @@ import Control.Exception (catch, evaluate)
 import System.IO.Unsafe
 
 import Clash.Prelude hiding (System)
+import qualified Clash.Prelude as C
 import qualified Prelude as P
 import Test.Hspec
 import Test.QuickCheck hiding (resize, (.&.), (.&&.), (.||.), sample)
@@ -30,7 +31,7 @@ import TestUtils
 type System dom = Vec (2 ^ 10) (BitVector 32) -> Signal dom Bool -> Signal dom ToDataMem
 
 --Pipeline + instruction memory + data memory. No caches.
-system :: HiddenClockReset dom sync gated => System dom
+system :: HiddenClockResetEnable dom => System dom
 system program instrStall = toDataMem
     where
     --The instruction memory
@@ -44,7 +45,7 @@ system program instrStall = toDataMem
     (toInstructionMem, toDataMem, _) = pipeline (FromInstructionMem <$> mux instrStall 0 instr_0 <*> instrStall) (FromDataMem <$> memReadData_3')
 
 --Pipeline + instruction cache + instruction memory + data memory. No data cache.
-systemWithCache :: forall dom sync gated. HiddenClockReset dom sync gated => System dom
+systemWithCache :: forall dom sync gated. HiddenClockResetEnable dom => System dom
 systemWithCache program instrStall = toDataMem
     where
     lines :: Vec (2 ^ 6) (Vec 16 (BitVector 32))
@@ -88,20 +89,20 @@ type TestRunner = Vec (2 ^ 10) (BitVector 32) -> Int -> (ToDataMem -> Bool) -> P
 --Basic cacheless system
 runTest :: TestRunner
 runTest instrs cycles pred = property $ do
-    let result = sampleN_lazy cycles $ system instrs (pure False)
+    let result = sampleN_lazy @C.System cycles $ system instrs (pure False)
     any (predX pred) result `shouldBe` True
 
 --System with instruction cache
 runTestCache :: TestRunner
 runTestCache instrs cycles pred = forAll arbitrary $ \instrStall -> do
-    let result = sampleN_lazy cycles $ systemWithCache instrs instrStall
+    let result = sampleN_lazy @C.System cycles $ systemWithCache instrs instrStall
     any (predX pred) result `shouldBe` True
 
 --System without instruction cache, but emulates cache stalls
 runTestStalls :: TestRunner
 runTestStalls instrs cycles pred = forAll (vectorOf (5 * cycles) arbitrary) $ \instrStall ->
     P.length (P.filter not instrStall) > cycles ==>
-            let result = sampleN_lazy cycles $ system instrs (fromList instrStall)
+            let result = sampleN_lazy @C.System cycles $ system instrs (fromList instrStall)
             in  any (predX pred) result `shouldBe` True
 
 --Is x outputted at least once to address 63 as a full word
@@ -201,21 +202,21 @@ main = hspec $ do
                 property $
                     forAll (QC.resize 100 arbitrary) $ \addresses ->
                         forAll arbitrary $ \memValid ->
-                            cacheProp addresses memValid
+                            cacheProp @C.System addresses memValid
 
             it "works with random and previous addresses" $
                 property $
                     --TODO: figure out how to increase the number of addresses without using up all my RAM
                     forAll (P.take 200 <$> withPreviousAccesses 5) $ \addresses ->
                         forAll arbitrary $ \memValid ->
-                            cacheProp addresses memValid
+                            cacheProp @C.System addresses memValid
 
             it "tests corner cases" $
                 property $
                     --TODO: figure out how to increase the number of addresses without using up all my RAM
                     forAll (P.take 200 <$> withRealisticAccesses 5) $ \addresses ->
                         forAll arbitrary $ \memValid ->
-                            cacheProp addresses memValid
+                            cacheProp @C.System addresses memValid
 
         describe "Pipeline" $ do
 

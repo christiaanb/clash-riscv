@@ -1,0 +1,6 @@
+packages: .
+
+source-repository-package
+    type: git
+    location: https://github.com/leonschoorl/riscv-isa.git
+    tag: a2c2089cdcc7618cd8201bfce44027f02c507a15

@@ -1,0 +1,8 @@
+resolver: lts-16.1
+
+packages:
+- .
+
+extra-deps:
+- git: https://github.com/leonschoorl/riscv-isa.git
+  commit: a2c2089cdcc7618cd8201bfce44027f02c507a15

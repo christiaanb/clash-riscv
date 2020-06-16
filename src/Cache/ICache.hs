@@ -13,7 +13,7 @@ data IWay (tagBits :: Nat) (lineBits :: Nat) = IWay {
     valid   :: Bool,
     tag     :: BitVector tagBits,
     line    :: Vec (2 ^ lineBits) (BitVector 32)
-}
+} deriving (Generic, NFDataX)
 
 instance (KnownNat tagBits, KnownNat lineBits) => Default (IWay tagBits lineBits) where
     def = IWay False 0 (repeat 0)
@@ -27,7 +27,7 @@ type CacheWrite indexBits tagBits lineBits = Maybe (Unsigned indexBits, IWay tag
  -}
 --TODO: support wrapped burst memory read instead of expecting a whole line to arrive at the same time.
 iCache
-    :: forall dom sync gated tagBits indexBits lineBits ways ways'. (HiddenClockReset dom gated sync, (tagBits + (indexBits + lineBits)) ~ 30, ways ~ (ways' + 1), KnownNat indexBits, KnownNat tagBits, KnownNat lineBits, KnownNat ways)
+    :: forall dom sync gated tagBits indexBits lineBits ways ways'. (HiddenClockResetEnable dom, (tagBits + (indexBits + lineBits)) ~ 30, ways ~ (ways' + 1), KnownNat indexBits, KnownNat tagBits, KnownNat lineBits, KnownNat ways, NFDataX (IWay tagBits lineBits))
     => SNat tagBits
     -> SNat indexBits
     -> SNat ways

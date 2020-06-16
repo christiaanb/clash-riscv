@@ -16,7 +16,7 @@ data ForwardingSource
     = ForwardingSourceALU
     | ForwardingSourceMem
     | NoForwarding
-    deriving (Eq, Show)
+    deriving (Eq, Show, Generic, NFDataX)
 
 data Stage0 = Stage0 {
     pc_0     :: Unsigned 32,

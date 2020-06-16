@@ -9,7 +9,7 @@ import Prog
 import Cache.ICache
 import Cache.Replacement
 
-systemWithCache :: forall dom sync gated. HiddenClockReset dom gated sync => Vec (2 ^ 10) (BitVector 32) -> Signal dom Bool -> Signal dom ToDataMem
+systemWithCache :: forall dom sync gated. HiddenClockResetEnable dom => Vec (2 ^ 10) (BitVector 32) -> Signal dom Bool -> Signal dom ToDataMem
 systemWithCache program instrStall = toDataMem
     where
     lines :: Vec (2 ^ 6) (Vec 16 (BitVector 32))
@@ -36,5 +36,5 @@ systemWithCache program instrStall = toDataMem
     , t_inputs = [PortName "clk", PortName "rst", PortName "instrStall"]
     , t_output = PortProduct "res" [PortName "readAddress", PortName "writeAddress", PortName "writeData", PortName "writeStrobe"]
     }) #-}
-topEntity :: Clock System Source -> Reset System Synchronous -> Signal System Bool -> Signal System ToDataMem
-topEntity clk rst = withClockReset clk rst $ systemWithCache ($(listToVecTH (P.map encodeInstr fib)) ++ repeat 0)
+topEntity :: Clock System -> Reset System -> Signal System Bool -> Signal System ToDataMem
+topEntity clk rst = withClockResetEnable clk rst enableGen $ systemWithCache ($(listToVecTH (P.map encodeInstr fib)) ++ repeat 0)
