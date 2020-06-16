@@ -26,7 +26,7 @@ type CacheWrite indexBits tagBits lineBits = Maybe (Unsigned indexBits, IWay tag
     -The processor must hold the requested address high, but is not required to hold the request signal high.
  -}
 --TODO: support wrapped burst memory read instead of expecting a whole line to arrive at the same time.
-iCache 
+iCache
     :: forall dom sync gated tagBits indexBits lineBits ways ways'. (HiddenClockReset dom gated sync, (tagBits + (indexBits + lineBits)) ~ 30, ways ~ (ways' + 1), KnownNat indexBits, KnownNat tagBits, KnownNat lineBits, KnownNat ways)
     => SNat tagBits
     -> SNat indexBits
@@ -45,14 +45,14 @@ iCache
 iCache _ _ _ replacementFunc req reqAddress fromMemValid fromMemData = (respValid, respData, busReq, busReqAddress)
     where
 
-    readVec 
-        = map 
-            (readNew (blockRamPow2 (repeat def :: Vec (2 ^ indexBits) (IWay tagBits lineBits))) (bitCoerce <$> indexBits)) 
+    readVec
+        = map
+            (readNew (blockRamPow2 (repeat def :: Vec (2 ^ indexBits) (IWay tagBits lineBits))) (bitCoerce <$> indexBits))
             writes
 
     --lru data - random replacement for now
     lru :: Signal dom (Index ways)
-    lru  = replacementFunc indexBits respValid wayIdx 
+    lru  = replacementFunc indexBits respValid wayIdx
 
     --Split the address into tag, index and line bits
     splitAddress :: BitVector 30 -> (BitVector tagBits, BitVector indexBits, BitVector lineBits)
@@ -108,4 +108,3 @@ iCache _ _ _ replacementFunc req reqAddress fromMemValid fromMemData = (respVali
     writes = imap func $ repeat ()
         where
         func idx _ = mux (fromMemValid' .&&. (lru .==. pure idx)) replacementWay (pure Nothing)
-

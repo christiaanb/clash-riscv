@@ -4,7 +4,7 @@ import Clash.Prelude
 
 import Data.Bool
 
-data PrimaryOp 
+data PrimaryOp
     = ADDSUB
     | SLT
     | SLTU
@@ -31,4 +31,3 @@ alu op sop x y = (addSub, alu' op sop x y)
     alu' SR     True  x y = pack $ shiftR (unpack x :: Signed 32) shiftAmt
     addSub   = bool (x + y) (x - y) sop
     shiftAmt = unpack $ resize $ slice d4 d0 y
-

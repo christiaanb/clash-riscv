@@ -6,7 +6,7 @@ import Clash.Prelude
 
 import Cache.PseudoLRUTree
 
-type ReplacementFunc dom indexBits ways 
+type ReplacementFunc dom indexBits ways
     =  Signal dom (BitVector indexBits) --Index being looked up in the current cycle
     -> Signal dom Bool                  --Hit in next cycle
     -> Signal dom (Index ways)          --Way that was hit (if any) in the next cycle
@@ -17,8 +17,8 @@ randomReplacement _ _ _ = bitCoerce <$> toReplace
     where
     toReplace = register False $ not <$> toReplace
 
-pseudoLRUReplacement 
-    :: forall dom sync gated indexBits numWaysLog. (HiddenClockReset dom gated sync, KnownNat indexBits, KnownNat numWaysLog, 1 <= numWaysLog) 
+pseudoLRUReplacement
+    :: forall dom sync gated indexBits numWaysLog. (HiddenClockReset dom gated sync, KnownNat indexBits, KnownNat numWaysLog, 1 <= numWaysLog)
     => ReplacementFunc dom indexBits (2 ^ numWaysLog)
 pseudoLRUReplacement index valid way = bitCoerce . getOldestWay <$> readResult
     where
@@ -29,6 +29,5 @@ pseudoLRUReplacement index valid way = bitCoerce . getOldestWay <$> readResult
 
     write      :: Signal dom (Maybe (Unsigned indexBits, Vec ((2 ^ numWaysLog) - 1) Bool))
     write      = mux valid (func <$> lastIdx <*> readResult <*> way) (pure Nothing)
-        where 
+        where
         func index readResult way = Just (unpack index, updateWay (bitCoerce way) readResult)
-

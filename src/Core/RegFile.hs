@@ -4,7 +4,7 @@ import Clash.Prelude
 
 type RegFile = Vec 32 (BitVector 32)
 
-regFile 
+regFile
     :: HiddenClockReset dom gated sync
     => Signal dom (Index 32)     --Write address
     -> Signal dom Bool           --Write enable
@@ -20,7 +20,7 @@ regFile writeAddr writeEn writeData = file
             regFile'
                 | writeEn   = replace writeAddr writeData regFile
                 | otherwise = regFile
-            
+
 readReg :: Vec 32 (BitVector 32) -> Index 32 -> BitVector 32
 readReg regFile idx
     | idx == 0  = 0

@@ -5,7 +5,7 @@ import Clash.Prelude
 import Data.Bool
 
 branchCompare :: BitVector 3 -> BitVector 32 -> BitVector 32 -> Bool
-branchCompare opNeg x y 
+branchCompare opNeg x y
     = bool id complement (unpack negate) $ case op of
         0 -> x == y
         2 -> s x < s y
@@ -18,4 +18,3 @@ branchCompare opNeg x y
     u      =  unpack
     s      :: BitVector 32 -> Signed 32
     s      =  unpack
-

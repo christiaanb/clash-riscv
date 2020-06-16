@@ -86,8 +86,8 @@ sys = (== 0b1110011) . opcode
 --ALU operation decoding
 --
 decodeAluPrimaryOp :: BitVector 32 -> PrimaryOp
-decodeAluPrimaryOp instr 
-    | iType instr || rType instr = 
+decodeAluPrimaryOp instr
+    | iType instr || rType instr =
         case rOp2 instr of
             0 -> ADDSUB
             1 -> SLL
@@ -101,7 +101,7 @@ decodeAluPrimaryOp instr
     | otherwise   = ADDSUB --TODO
 
 decodeAluSecondaryOp :: BitVector 32 -> SecondaryOp
-decodeAluSecondaryOp instr 
+decodeAluSecondaryOp instr
     | rType instr
         = unpack $ slice d30 d30 instr
     | auipc instr
@@ -117,10 +117,10 @@ The first operand to the ALU can fome from
   - The first read port of the register file for R and I type instructions
   - The PC for AUIPC
 -}
-firstOpIsRegister = not . auipc 
+firstOpIsRegister = not . auipc
 
 {-
-The second operand to the ALU can come from 
+The second operand to the ALU can come from
   - The second read port of the register file for R type instructions
   - The immediate field for I type instructions
 -}
@@ -150,7 +150,7 @@ The source of the register write back is the alu (as opposed to a memory read) i
   - rType
 -}
 
-data DestRegSource 
+data DestRegSource
     = SourceALU
     | SourceMem
     | SourceSpec
@@ -191,7 +191,7 @@ data MemSize
     | Word
 
 extractMemSize :: BitVector 32 -> MemSize
-extractMemSize x 
+extractMemSize x
     = case slice d13 d12 x of
         0         -> Byte
         1         -> HalfWord
@@ -212,7 +212,7 @@ extractBranchType = slice d14 d12
 --
 
 specialReg :: BitVector 32 -> Bool
-specialReg instr 
+specialReg instr
     =  slice d31 d28 instr == 0b1100
     && slice d26 d22 instr == 0
 
@@ -232,4 +232,3 @@ decodeSpecialReg _ = Cycle -- TODO
 
 specialRegHigh :: BitVector 32 -> Bool
 specialRegHigh  = unpack . slice d27 d27
-

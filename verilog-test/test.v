@@ -32,7 +32,7 @@ module main;
         //instructionMem[5] = 4294017427;
         //instructionMem[6] = 4264565475;
         //instructionMem[7] = 4267715107;
-        
+
         //recursive fib
         instructionMem[0]  = 147;
         instructionMem[1]  = 8388883;

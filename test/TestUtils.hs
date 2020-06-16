@@ -11,4 +11,3 @@ firstCycleDef' defa = mealy step False
 
 firstCycleDef :: (HiddenClockReset dom sync gated, Default a) => Signal dom a -> Signal dom a
 firstCycleDef = firstCycleDef' def
-

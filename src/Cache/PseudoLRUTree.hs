@@ -10,10 +10,10 @@ import Data.Proxy
 --Combined get and update oldest
 --
 
-updateOldestWay' 
-    :: forall n m. (n ~ (m + 1), KnownNat n) => 
-       (Vec ((2 ^ n) - 1) Bool -> (Vec n Bool, Vec ((2 ^ n) - 1) Bool)) 
-    -> Vec ((2 ^ (n + 1)) - 1) Bool 
+updateOldestWay'
+    :: forall n m. (n ~ (m + 1), KnownNat n) =>
+       (Vec ((2 ^ n) - 1) Bool -> (Vec n Bool, Vec ((2 ^ n) - 1) Bool))
+    -> Vec ((2 ^ (n + 1)) - 1) Bool
     -> (Vec (n + 1) Bool, Vec ((2 ^ (n + 1)) - 1) Bool)
 updateOldestWay' recurse (node :> tree) = (node :> oldestIdx', updatedTree)
     where
@@ -31,7 +31,7 @@ type instance Apply Step n = Vec ((2 ^ (n + 1)) - 1) Bool -> (Vec (n + 1) Bool, 
 updateOldestWay :: forall m n. (n ~ (m + 1), KnownNat m) => Vec ((2 ^ n) - 1) Bool -> (Vec n Bool, Vec ((2 ^ n) - 1) Bool)
 updateOldestWay = dfold (Proxy :: Proxy Step) func updateOldestBaseCase (replicate (SNat @ m) ())
     where
-    func 
+    func
         :: forall n1. SNat n1
         -> ()
         -> (Step @@ n1)
@@ -42,10 +42,10 @@ updateOldestWay = dfold (Proxy :: Proxy Step) func updateOldestBaseCase (replica
 --Get oldest
 --
 
-getOldestWay' 
-    :: forall n m. (n ~ (m + 1), KnownNat n) => 
+getOldestWay'
+    :: forall n m. (n ~ (m + 1), KnownNat n) =>
        (Vec ((2 ^ n) - 1) Bool -> Vec n Bool)
-    -> Vec ((2 ^ (n + 1)) - 1) Bool 
+    -> Vec ((2 ^ (n + 1)) - 1) Bool
     -> Vec (n + 1) Bool
 getOldestWay' recurse (node :> tree) = node :> oldestIdx'
     where
@@ -58,7 +58,7 @@ type instance Apply Step2 n = Vec ((2 ^ (n + 1)) - 1) Bool -> Vec (n + 1) Bool
 getOldestWay :: forall m n. (n ~ (m + 1), KnownNat m) => Vec ((2 ^ n) - 1) Bool -> Vec n Bool
 getOldestWay = dfold (Proxy :: Proxy Step2) func id (replicate (SNat @ m) ())
     where
-    func 
+    func
         :: forall n1. SNat n1
         -> ()
         -> (Step2 @@ n1)
@@ -69,11 +69,11 @@ getOldestWay = dfold (Proxy :: Proxy Step2) func id (replicate (SNat @ m) ())
 --Update
 --
 
-updateWay' 
-    :: forall n m. (n ~ (m + 1), KnownNat n) => 
-       (Vec n Bool -> Vec ((2 ^ n) - 1) Bool -> Vec ((2 ^ n) - 1) Bool) 
+updateWay'
+    :: forall n m. (n ~ (m + 1), KnownNat n) =>
+       (Vec n Bool -> Vec ((2 ^ n) - 1) Bool -> Vec ((2 ^ n) - 1) Bool)
     -> Vec (n + 1) Bool
-    -> Vec ((2 ^ (n + 1)) - 1) Bool 
+    -> Vec ((2 ^ (n + 1)) - 1) Bool
     -> Vec ((2 ^ (n + 1)) - 1) Bool
 updateWay' recurse (this :> rest) (_ :> tree) = updatedTree
     where
@@ -87,10 +87,9 @@ type instance Apply Step3 n = Vec (n + 1) Bool -> Vec ((2 ^ (n + 1)) - 1) Bool -
 updateWay :: forall m n. (n ~ (m + 1), KnownNat m) => Vec n Bool -> Vec ((2 ^ n) - 1) Bool -> Vec ((2 ^ n) - 1) Bool
 updateWay = dfold (Proxy :: Proxy Step3) func (\idx tree -> map not idx) (replicate (SNat @ m) ())
     where
-    func 
+    func
         :: forall n1. SNat n1
         -> ()
         -> (Step3 @@ n1)
         -> (Step3 @@ (n1 + 1))
     func SNat () = updateWay'
-

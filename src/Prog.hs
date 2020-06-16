@@ -18,10 +18,9 @@ fib = [
         RIInstr     $ IInstr ADDI (Word12 0) X4 X2,
         --Decrement the counter
         RIInstr     $ IInstr ADDI (Word12 (-1)) X3 X3,
-        --Branch 
+        --Branch
         BranchInstr $ Branch (Word12 (-8)) BNE X3 X0,
         --Write the output in a loop
         MemoryInstr $ STORE  Word (Word12 0xff) X2 X0,
         JumpInstr   $ JAL    (Word20 (-2)) X0
     ]
-

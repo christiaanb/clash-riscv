@@ -15,7 +15,7 @@ fib2 = [
         RRInstr     $ RInstr ADD  X5 X6 X6,
         --Decrement the counter
         RIInstr     $ IInstr ADDI (Word12 (-1)) X3 X3,
-        --Branch 
+        --Branch
         BranchInstr $ Branch (Word12 (-6)) BNE X3 X0,
         --Write the output
         MemoryInstr $ STORE  Word (Word12 (-12)) X6 X0
@@ -24,13 +24,13 @@ fib2 = [
 --A Naiive, recursive, exponential time fibbonnacci function
 recursiveFib :: [Instr]
 recursiveFib = [
-        --Calling convention: 
+        --Calling convention:
         -- The caller saves all registers it needs. The stack pointer is assumed unclobbered.
         -- -Stack pointer: X1
         -- -Single argument in X2
         -- -Return address in X3
         -- -Return value in X4
-        
+
         --Make the function call
         --Setup the stack pointer. The stack grows upwards.
         RIInstr     $ IInstr ADDI (Word12 0) X0 X1,
@@ -42,7 +42,7 @@ recursiveFib = [
         --Write the output in a loop
         MemoryInstr $ STORE  Word (Word12 0xff) X4 X0,
         JumpInstr   $ JAL    (Word20 (-2)) X0,
-        
+
         --The function
         --We need to make a recursive call, so we need to store our local vars in a stack frame
         --Layout:
@@ -91,7 +91,7 @@ recursiveFib = [
         --Put the stack pointer back
         RIInstr     $ IInstr ADDI (Word12 (-12)) X1 X1,
         --Return
-        JumpInstr   $ JALR   (Word12 0)  X3 X0 
+        JumpInstr   $ JALR   (Word12 0)  X3 X0
 
     ]
 

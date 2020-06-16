@@ -23,7 +23,7 @@ import TestUtils
 
 {-
  - Systems
- - Take a program, a signal to simulate instructions not being available (e.g, because of a cache miss) 
+ - Take a program, a signal to simulate instructions not being available (e.g, because of a cache miss)
  - Returns a Signal of data memory accesses which is used to verify correct behaviour of the system
 -}
 
@@ -34,12 +34,12 @@ system :: HiddenClockReset dom sync gated => System dom
 system program instrStall = toDataMem
     where
     --The instruction memory
-    instr_0 = firstCycleDef $ romPow2 program (resize . instructionAddress <$> toInstructionMem) 
+    instr_0 = firstCycleDef $ romPow2 program (resize . instructionAddress <$> toInstructionMem)
     --The data memory
     memReadData_3' = firstCycleDef $ readNew (blockRamPow2 (repeat 0 :: Vec (2 ^ 10) (BitVector 32)))
         ((resize . readAddress)  <$> toDataMem) --read address
         (mux ((/=0) . writeStrobe <$> toDataMem) (Just <$> bundle ((resize . writeAddress) <$> toDataMem, writeData <$> toDataMem)) (pure Nothing))
-        
+
     --The processor
     (toInstructionMem, toDataMem, _) = pipeline (FromInstructionMem <$> mux instrStall 0 instr_0 <*> instrStall) (FromDataMem <$> memReadData_3')
 
@@ -55,22 +55,22 @@ systemWithCache program instrStall = toDataMem
     fromMem = firstCycleDef $ romPow2 lines ((unpack . resize) <$> memAddr)
 
     --The instruction cache
-    (instrReady, instrData, memReq, memAddr) = 
-        iCache 
-            (SNat @ 14) 
-            (SNat @ 12) 
+    (instrReady, instrData, memReq, memAddr) =
+        iCache
+            (SNat @ 14)
+            (SNat @ 12)
             (SNat @ 4)
             pseudoLRUReplacement
-            (pure True) 
-            ((pack . instructionAddress) <$> toInstructionMem) 
-            (not <$> instrStall) 
+            (pure True)
+            ((pack . instructionAddress) <$> toInstructionMem)
+            (not <$> instrStall)
             (mux instrStall (pure $ repeat 0) fromMem)
 
     --The data memory
     memReadData_3' = firstCycleDef $ readNew (blockRamPow2 (repeat 0 :: Vec (2 ^ 10) (BitVector 32)))
         ((resize . readAddress)  <$> toDataMem) --read address
         (mux ((/=0) . writeStrobe <$> toDataMem) (Just <$> bundle ((resize . writeAddress) <$> toDataMem, writeData <$> toDataMem)) (pure Nothing))
-        
+
     --The processor
     (toInstructionMem, toDataMem, _) = pipeline (FromInstructionMem <$> instrData <*> (not <$> (firstCycleDef' False instrReady))) (FromDataMem <$> memReadData_3')
 
@@ -99,7 +99,7 @@ runTestCache instrs cycles pred = forAll arbitrary $ \instrStall -> do
 
 --System without instruction cache, but emulates cache stalls
 runTestStalls :: TestRunner
-runTestStalls instrs cycles pred = forAll (vectorOf (5 * cycles) arbitrary) $ \instrStall -> 
+runTestStalls instrs cycles pred = forAll (vectorOf (5 * cycles) arbitrary) $ \instrStall ->
     P.length (P.filter not instrStall) > cycles ==>
             let result = sampleN_lazy cycles $ system instrs (fromList instrStall)
             in  any (predX pred) result `shouldBe` True
@@ -114,20 +114,20 @@ outputs x ToDataMem{..} = writeAddress == 63 && writeData == x && writeStrobe ==
 
 --Test a single R type instruction
 testRType :: TestRunner -> ROpcode -> (Signed 32 -> Signed 32 -> Signed 32) -> Property
-testRType runner op func = 
-    property $ \(x :: Signed 12) (y :: Signed 12) -> 
+testRType runner op func =
+    property $ \(x :: Signed 12) (y :: Signed 12) ->
         runner
-            (map (fromIntegral . encodeInstr) (rType (Word12 (fromIntegral y)) (Word12 (fromIntegral x)) op) ++ repeat 0) 
-            100 
+            (map (fromIntegral . encodeInstr) (rType (Word12 (fromIntegral y)) (Word12 (fromIntegral x)) op) ++ repeat 0)
+            100
             (outputs (fromIntegral ((resize x :: Signed 32) `func` resize y)))
 
 --Test a single I type instruction
 testIType :: TestRunner -> IOpcode -> (Signed 32 -> Signed 32 -> Signed 32) -> Property
-testIType runner op func = 
-    property $ \(x :: Signed 12) (y :: Signed 12) -> 
+testIType runner op func =
+    property $ \(x :: Signed 12) (y :: Signed 12) ->
         runner
-            (map (fromIntegral . encodeInstr) (iType (Word12 (fromIntegral x)) (Word12 (fromIntegral y)) op) ++ repeat 0) 
-            100 
+            (map (fromIntegral . encodeInstr) (iType (Word12 (fromIntegral x)) (Word12 (fromIntegral y)) op) ++ repeat 0)
+            100
             (outputs (fromIntegral ((resize x :: Signed 32) `func` resize y)))
 
 --Generates an infinite list of addresses where each address has a 50% chance of being one of the last historySize addresses
@@ -168,7 +168,7 @@ withRealisticAccesses historySize = withRealisticAccesses' [0]
 
                     True  -> do
 
-                        --Randomly choose 3 bits to mutate. 
+                        --Randomly choose 3 bits to mutate.
                         --The idea is that we will generate cases that mutate the
                         --  - line bits only, thus requesting a different word in a line that is already in the cache
                         --  - index bits only, thus requesting a different index
@@ -198,31 +198,31 @@ main = hspec $ do
 
         describe "Instruction cache" $ do
             it "works with random addresses" $
-                property $ 
-                    forAll (QC.resize 100 arbitrary) $ \addresses -> 
-                        forAll arbitrary $ \memValid -> 
+                property $
+                    forAll (QC.resize 100 arbitrary) $ \addresses ->
+                        forAll arbitrary $ \memValid ->
                             cacheProp addresses memValid
 
             it "works with random and previous addresses" $
-                property $ 
+                property $
                     --TODO: figure out how to increase the number of addresses without using up all my RAM
-                    forAll (P.take 200 <$> withPreviousAccesses 5) $ \addresses -> 
-                        forAll arbitrary $ \memValid -> 
+                    forAll (P.take 200 <$> withPreviousAccesses 5) $ \addresses ->
+                        forAll arbitrary $ \memValid ->
                             cacheProp addresses memValid
 
             it "tests corner cases" $
-                property $ 
+                property $
                     --TODO: figure out how to increase the number of addresses without using up all my RAM
-                    forAll (P.take 200 <$> withRealisticAccesses 5) $ \addresses -> 
-                        forAll arbitrary $ \memValid -> 
+                    forAll (P.take 200 <$> withRealisticAccesses 5) $ \addresses ->
+                        forAll arbitrary $ \memValid ->
                             cacheProp addresses memValid
 
         describe "Pipeline" $ do
 
             let unitTests runner = do
 
-                    it "store" $ 
-                        runner ($(listToVecTH (P.map encodeInstr store)) ++ repeat 0) 100 (outputs 0x12348688) 
+                    it "store" $
+                        runner ($(listToVecTH (P.map encodeInstr store)) ++ repeat 0) 100 (outputs 0x12348688)
 
                     it "lui" $
                         runner ($(listToVecTH (P.map encodeInstr lui)) ++ repeat 0) 100 (outputs 0x12345000)
@@ -248,7 +248,7 @@ main = hspec $ do
                         it "xori"  $ testIType runner XORI  xor
                         it "ori"   $ testIType runner ORI   (.|.)
                         it "andi"  $ testIType runner ANDI  (.&.)
-                    
+
                     describe "jal" $ do
                         it "jumps to right place" $
                             runner ($(listToVecTH (P.map encodeInstr jal)) ++ repeat 0) 100 (outputs 1)
@@ -263,47 +263,47 @@ main = hspec $ do
 
                     describe "branch" $ do
                         describe "beq" $ do
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1234) BEQ)) ++ repeat 0) 100 (outputs 0)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1235) BEQ)) ++ repeat 0) 100 (outputs 1)
 
                         describe "bne" $ do
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1235) BNE)) ++ repeat 0) 100 (outputs 0)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1234) BNE)) ++ repeat 0) 100 (outputs 1)
 
                         describe "blt" $ do
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1235) (Word12 1234) BLT)) ++ repeat 0) 100 (outputs 0)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1234) BLT)) ++ repeat 0) 100 (outputs 1)
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1235) (Word12 0xf00) BLT)) ++ repeat 0) 100 (outputs 0)
 
                         describe "bge" $ do
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1234) BGE)) ++ repeat 0) 100 (outputs 0)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1235) (Word12 1234) BGE)) ++ repeat 0) 100 (outputs 1)
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 0xf00) (Word12 1234) BGE)) ++ repeat 0) 100 (outputs 0)
 
                         describe "bltu" $ do
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1235) (Word12 1234) BLTU)) ++ repeat 0) 100 (outputs 0)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1234) BLTU)) ++ repeat 0) 100 (outputs 1)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1235) (Word12 0xf00) BLTU)) ++ repeat 0) 100 (outputs 1)
 
                         describe "bgeu" $ do
-                            it "branches" $ 
+                            it "branches" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1234) (Word12 1234) BGEU)) ++ repeat 0) 100 (outputs 0)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 1235) (Word12 1234) BGEU)) ++ repeat 0) 100 (outputs 1)
-                            it "does not branch" $ 
+                            it "does not branch" $
                                 runner ($(listToVecTH (P.map encodeInstr $ branch (Word12 0xf00) (Word12 1234) BGEU)) ++ repeat 0) 100 (outputs 1)
 
                     describe "stalls" $ do
@@ -319,11 +319,11 @@ main = hspec $ do
                             runner ($(listToVecTH (P.map encodeInstr aluForward2)) ++ repeat 0) 100 (outputs 3)
                         it "forwards alu to alu" $
                             runner ($(listToVecTH (P.map encodeInstr aluForward3)) ++ repeat 0) 100 (outputs 3)
-                        it "forwards mem to alu" $ 
+                        it "forwards mem to alu" $
                             runner ($(listToVecTH (P.map encodeInstr memALUForward)) ++ repeat 0) 100 (outputs 0x12348690)
-                        it "forwards mem to alu" $ 
+                        it "forwards mem to alu" $
                             runner ($(listToVecTH (P.map encodeInstr memALUForward2)) ++ repeat 0) 100 (outputs 0x12348690)
-                        it "forwards mem to mem" $ 
+                        it "forwards mem to mem" $
                             runner ($(listToVecTH (P.map encodeInstr memMemForward)) ++ repeat 0) 100 (outputs 0x12345678)
 
                     describe "Loads" $ do
@@ -354,17 +354,16 @@ main = hspec $ do
             describe "with stalls" $ do
                 it "computes recursive fibonacci correctly" $
                     runTestStalls ($(listToVecTH (P.map encodeInstr recursiveFib)) ++ repeat 0) 2000 (outputs 21)
-                it "computes loop fibonacci correctly" $ 
+                it "computes loop fibonacci correctly" $
                     runTestStalls ($(listToVecTH (P.map encodeInstr fib)) ++ repeat 0)          1000 (outputs 144)
-                it "computes unrolled fibonacci correctly" $ 
+                it "computes unrolled fibonacci correctly" $
                     runTestStalls ($(listToVecTH (P.map encodeInstr fibUnrolled)) ++ repeat 0)  1000 (outputs 89)
 
             describe "with cache" $ do
                 --TODO: fails
                 --it "computes recursive fibonacci correctly" $
                 --    runTestCache ($(listToVecTH (P.map encodeInstr recursiveFib)) ++ repeat 0) 2000 (outputs 21)
-                it "computes loop fibonacci correctly" $ 
+                it "computes loop fibonacci correctly" $
                     runTestCache ($(listToVecTH (P.map encodeInstr fib)) ++ repeat 0)          1000 (outputs 144)
-                it "computes unrolled fibonacci correctly" $ 
+                it "computes unrolled fibonacci correctly" $
                     runTestCache ($(listToVecTH (P.map encodeInstr fibUnrolled)) ++ repeat 0)  1000 (outputs 89)
-

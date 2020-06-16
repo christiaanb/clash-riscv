@@ -13,7 +13,7 @@ import Cache.PseudoLRUTree
 import TestUtils
 
 --Backing mem for cache. Delivers a line at a time
-backingMem 
+backingMem
     :: HiddenClockReset dom sync gated
     => Signal dom Bool
     -> Signal dom (BitVector 30)
@@ -24,7 +24,7 @@ backingMem req addr memValid = register (False, repeat 0) $ readMemory <$> addr 
     readMemory addr memValid = (memValid, bool (repeat 0) (map resize (iterateI (+ 1) (addr .&. complement 0b1111))) memValid)
 
 --Test stimulus generation for instruction cache. Requests a sequence of addresses and checks the correct result is returned.
-testCache 
+testCache
     :: HiddenClockReset dom sync gated
     => [BitVector 30]
     -> Signal dom Bool
@@ -36,11 +36,11 @@ testCache addresses instrValid instr = mealy step addresses $ bundle (instrValid
     step state (memReady, memData) = (state', ((memReq, memAddress), (P.null state, success)))
         where
         memReq = True
-        memAddress 
+        memAddress
             = case state' of
                 (x:xs) -> x
                 []     -> 0
-        lastMemAddress 
+        lastMemAddress
             = case state of
                 (x:xs) -> x
                 []     -> 0
@@ -88,4 +88,3 @@ prop_plruIdempotent tree idx = updateWay idx tree == updateWay idx (updateWay id
 
 prop_plruSimpleCase :: Vec 1 Bool -> Bool
 prop_plruSimpleCase tree = updateWay (getOldestWay tree) tree == Clash.map not tree
-

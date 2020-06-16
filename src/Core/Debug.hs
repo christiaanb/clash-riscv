@@ -182,11 +182,10 @@ instance NFData PipelineState where
     rnf _ = ()
 
 prettyPipelineState :: PipelineState -> Text
-prettyPipelineState PipelineState{..} 
+prettyPipelineState PipelineState{..}
     =  "============================================================================================================================\n"
-    <> prettyStage0 stage0 <> "\n\n" 
-    <> prettyStage1 stage1 <> "\n\n" 
-    <> prettyStage2 stage2 <> "\n\n" 
+    <> prettyStage0 stage0 <> "\n\n"
+    <> prettyStage1 stage1 <> "\n\n"
+    <> prettyStage2 stage2 <> "\n\n"
     <> prettyStage3 stage3 <> "\n\n"
     <> prettyStage4 stage4 <> "\n"
-

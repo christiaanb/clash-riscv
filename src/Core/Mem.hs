@@ -12,12 +12,12 @@ doLoad HalfWord unsigned lowerAddress memReadValue = bool signExtendImmediate re
 doLoad Word     _        _            memReadValue = memReadValue
 
 calcWriteStrobe :: MemSize -> BitVector 2 -> BitVector 4
-calcWriteStrobe Byte     lowerAddress 
+calcWriteStrobe Byte     lowerAddress
     | lowerAddress == 0b00 = 0b0001
     | lowerAddress == 0b01 = 0b0010
     | lowerAddress == 0b10 = 0b0100
     | lowerAddress == 0b11 = 0b1000
-calcWriteStrobe HalfWord lowerAddress 
+calcWriteStrobe HalfWord lowerAddress
     | slice d1 d1 lowerAddress == 0b1 = 0b1100
     | otherwise                       = 0b0011
 calcWriteStrobe Word     lowerAddress = 0b1111
