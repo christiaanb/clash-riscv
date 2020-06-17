@@ -45,7 +45,21 @@ library
         GADTs,
         KindSignatures,
         TypeFamilies
-    ghc-options:         -fplugin=GHC.TypeLits.Normalise -fplugin=GHC.TypeLits.KnownNat.Solver -fplugin GHC.TypeLits.Extra.Solver
+  ghc-options:
+    -- -Wall -Wcompat
+
+    -- Plugins to support type-level constraint solving on naturals
+    -fplugin GHC.TypeLits.Extra.Solver
+    -fplugin GHC.TypeLits.Normalise
+    -fplugin GHC.TypeLits.KnownNat.Solver
+
+    -- Clash needs access to the source code in compiled modules
+    -fexpose-all-unfoldings
+
+    -- Worker wrappers introduce unstable names for functions that might have
+    -- blackboxes attached for them. You can disable this, but be sure to add
+    -- a no-specialize pragma to every function with a blackbox.
+    -fno-worker-wrapper
 
 Test-Suite test
     type:                exitcode-stdio-1.0
@@ -71,3 +85,19 @@ Test-Suite test
         KindSignatures,
         TypeFamilies,
         RecordWildCards
+
+
+
+-- copied from clash-example-project
+executable clash
+  main-is: bin/Clash.hs
+  Build-Depends: base, clash-ghc, clash-riscv
+  if !os(Windows)
+    ghc-options: -dynamic
+  default-language:    Haskell2010
+executable clashi
+  main-is: bin/Clashi.hs
+  if !os(Windows)
+    ghc-options: -dynamic
+  build-depends: base, clash-ghc, clash-riscv
+  default-language:    Haskell2010
