@@ -9,8 +9,8 @@ import qualified Data.Text as Text
 import Data.Monoid
 import Control.DeepSeq
 
-import Core.ALU
-import Core.Decode
+import Core.ALU_m
+import Core.Decode_m
 
 data ForwardingSource
     = ForwardingSourceALU

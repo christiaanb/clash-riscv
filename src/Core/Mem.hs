@@ -4,7 +4,7 @@ import Clash.Prelude
 
 import Data.Bool
 
-import Core.Decode
+import Core.Decode_m
 
 doLoad :: MemSize -> Bool -> BitVector 2 -> BitVector 32 -> BitVector 32
 doLoad Byte     unsigned lowerAddress memReadValue = bool signExtendImmediate resize unsigned $ (reverse $ unpack memReadValue :: Vec 4 (BitVector 8))  !! lowerAddress

@@ -3,8 +3,8 @@ module System where
 
 import Clash.Prelude
 import qualified Prelude as P
-import RiscV.RV32I
-import RiscV.Encode.RV32I
+import RiscV.RV32IM
+import RiscV.Encode.RV32IM
 import Core.Pipeline
 import Prog
 

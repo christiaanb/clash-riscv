@@ -1,6 +1,6 @@
 import Data.Word
-import RiscV.RV32I
-import RiscV.Encode.RV32I
+import RiscV.RV32IM
+import RiscV.Encode.RV32IM
 
 fib2 :: [Instr]
 fib2 = [

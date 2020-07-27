@@ -6,8 +6,8 @@ import Data.Word
 import qualified Clash.Prelude as P
 import Clash.Prelude (Vec((:>), Nil))
 
-import RiscV.RV32I
-import RiscV.Encode.RV32I
+import RiscV.RV32IM
+import RiscV.Encode.RV32IM
 
 {-# ANN module ("HLint: ignore Use ++" :: String) #-}
 
@@ -23,6 +23,14 @@ rType x y op
     =  RIInstr     (IInstr ADDI x X0 X1)
     :> RIInstr     (IInstr ADDI y X0 X2)
     :> RRInstr     (RInstr op X1 X2 X3)
+    :> MemoryInstr (STORE  Word (Word12 0xff) X3 X0)
+    :> Nil
+
+rTypem :: Word12 -> Word12 -> MOpcode -> Vec 4 Instr
+rTypem x y op
+    =  RIInstr     (IInstr ADDI x X0 X1)
+    :> RIInstr     (IInstr ADDI y X0 X2)
+    :> RRInstr     (MInstr op X1 X2 X3)
     :> MemoryInstr (STORE  Word (Word12 0xff) X3 X0)
     :> Nil
 
@@ -375,3 +383,21 @@ recursiveFib = [
         JumpInstr   $ JALR   (Word12 0)  X3 X0
 
     ]
+
+-- sampleMulProg :: [Instr]
+-- sampleMulProg = [
+--         RIInstr     $ IInstr ADDI (Word12 10) X0 X1,
+-- 		RIInstr     $ IInstr ADDI (Word12 5) X0 X2,
+-- 		RIInstr     $ IInstr ADDI (Word12 -4) X0 X3,
+-- 		RIInstr     $ IInstr ADDI (Word12 -2) X0 X4
+-- 	]	
+-- 
+-- sampleDivProg :: [Instr]
+-- sampleDivProg = [
+--         RIInstr     $ IInstr ADDI (Word12 10) X0 X1,
+-- 		RIInstr     $ IInstr ADDI (Word12 5) X0 X2,
+-- 		RIInstr     $ IInstr ADDI (Word12 -4) X0 X3,
+-- 		RIInstr     $ IInstr ADDI (Word12 -2) X0 X4,
+-- 		RRInstr     $ MInstr DIV X5 X1 X2,
+-- 		RRInstr     $ MInstr DIV X5 X1 X2
+-- 	]

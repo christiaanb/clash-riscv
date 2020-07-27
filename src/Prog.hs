@@ -1,7 +1,7 @@
 module Prog where
 
 import Prelude
-import RiscV.RV32I
+import RiscV.RV32IM
 
 fib :: [Instr]
 fib = [

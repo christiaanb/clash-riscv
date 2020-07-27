@@ -7,8 +7,8 @@ import Clash.Prelude
 import Data.Bool
 
 import Core.RegFile
-import Core.Decode
-import Core.ALU
+import Core.Decode_m
+import Core.ALU_m
 import Core.Compare
 import Core.Mem
 import qualified Core.Debug as D
@@ -236,7 +236,7 @@ pipeline fromInstructionMem fromDataMem = (ToInstructionMem . unpack . slice d31
     aluOperand2_2 = mux aluOp2IsRegister_2 effectiveR2_2 imm_2
 
     --The ALU
-    (aluAddSub, aluRes_2)  = unbundle $ alu <$> primaryOp_2 <*> secondaryOp_2 <*> aluOperand1_2 <*> aluOperand2_2
+    (aluAddSub, aluRes_2)  = unbundle $ alu_m <$> primaryOp_2 <*> secondaryOp_2 <*> aluOperand1_2 <*> aluOperand2_2
     execRes_2 = mux bypassALU_2 aluBypass_2 aluRes_2
 
     --The compare unit for branching

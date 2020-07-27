@@ -1,8 +1,10 @@
-resolver: lts-16.1
+resolver: nightly-2020-06-29
 
 packages:
 - .
 
-extra-deps:
-- git: https://github.com/leonschoorl/riscv-isa.git
-  commit: a2c2089cdcc7618cd8201bfce44027f02c507a15
+extra-deps: 
+- ../riscv-isa-master
+- clash-ghc-1.2.2@sha256:9297454abe61c1b0606de8d63ddaac1c4f71779630e1424e945df4ca0307aad8,8264
+- clash-prelude-1.2.2@sha256:c19fad16038d90ce074793d74fb806b1db758a9aac3afa38780f67244e345594,15174
+- clash-lib-1.2.2@sha256:92a0edcb033afa05d66539877639921c90c69ac731d2b40621ab62a2473269b7,11229

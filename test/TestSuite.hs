@@ -8,8 +8,8 @@ import qualified Prelude as P
 import Test.Hspec
 import Test.QuickCheck hiding (resize, (.&.), (.&&.), (.||.), sample)
 import qualified Test.QuickCheck as QC
-import RiscV.RV32I
-import RiscV.Encode.RV32I
+import RiscV.RV32IM
+import RiscV.Encode.RV32IM
 import Data.Bool
 
 import Core.Pipeline
@@ -121,6 +121,22 @@ testRType runner op func =
             (map (fromIntegral . encodeInstr) (rType (Word12 (fromIntegral y)) (Word12 (fromIntegral x)) op) ++ repeat 0)
             100
             (outputs (fromIntegral ((resize x :: Signed 32) `func` resize y)))
+
+testRTypem :: TestRunner -> MOpcode -> (Signed 32 -> Signed 32 -> Signed 32) -> Property
+testRTypem runner op func =
+    property $ \(x :: Signed 12) (y :: Signed 12) ->
+        (y /= 0) ==> runner
+            (map (fromIntegral . encodeInstr) (rTypem (Word12 (fromIntegral y)) (Word12 (fromIntegral x)) op) ++ repeat 0)
+            100
+            (outputs (fromIntegral ((resize x :: Signed 32) `func` resize y)))
+
+testRTypemU :: TestRunner -> MOpcode -> (Unsigned 32 -> Unsigned 32 -> Unsigned 32) -> Property
+testRTypemU runner op func =
+    property $ \(x :: Unsigned 12) (y :: Unsigned 12) ->
+        (y > 0) ==> runner
+            (map (fromIntegral . encodeInstr) (rTypem (Word12 (fromIntegral y)) (Word12 (fromIntegral x)) op) ++ repeat 0)
+            100
+            (outputs (fromIntegral ((resize x :: Unsigned 32) `func` resize y)))
 
 --Test a single I type instruction
 testIType :: TestRunner -> IOpcode -> (Signed 32 -> Signed 32 -> Signed 32) -> Property
@@ -241,6 +257,16 @@ main = hspec $ do
                         it "srl"  $ testRType runner SRL  (\x y -> unpack $ shiftR (pack x) (fromIntegral (slice d4 d0 $ pack y)))
                         it "sub"  $ testRType runner SUB  (-)
                         it "sra"  $ testRType runner SRA  (\x y -> shiftR x (fromIntegral (slice d4 d0 $ pack y)))
+                    
+                    describe "rtypem" $ do
+                        it "mul"    $ testRTypem runner MUL    (*)
+                        it "mulh"   $ testRTypem runner MULH   (\x y -> unpack (slice d63 d32 (mul x y)) :: Signed 32)
+                        it "mulhsu" $ testRTypem runner MULHSU (*)
+                        it "mulhu"  $ testRTypem runner MULHU  (\x y -> unpack (slice d63 d32 (mul (pack x) (pack y))) :: Signed 32)
+                        it "div"    $ testRTypem runner DIV    (\x y -> quot x y)
+                        it "divu"   $ testRTypem runner DIVU   (\x y -> unpack (quot (pack x) (pack y)) :: Signed 32)
+                        it "rem"    $ testRTypem runner REM    (rem)
+                        it "remu"   $ testRTypem runner REMU   (\x y -> unpack (rem (pack x) (pack y)) :: Signed 32)
 
                     describe "itype" $ do
                         it "addi"  $ testIType runner ADDI  (+)
