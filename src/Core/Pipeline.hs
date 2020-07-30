@@ -1,8 +1,12 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass, ScopedTypeVariables #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveGeneric, DeriveAnyClass, ScopedTypeVariables, PatternSynonyms #-}
+#if __GLASGOW_HASKELL__ > 804
+{-# LANGUAGE NoStarIsType #-}
+#endif
 module Core.Pipeline where
 
 import GHC.Generics
-import Clash.Prelude
+import Clash.Prelude hiding (select,cycle)
 
 import Data.Bool
 
@@ -26,7 +30,8 @@ data ToInstructionMem = ToInstructionMem {
 }
 
 data FromDataMem = FromDataMem {
-    memoryData :: BitVector 32
+    memoryData :: BitVector 32,
+    memoryDataValid :: Bool
 }
 
 data ToDataMem = ToDataMem {
@@ -43,9 +48,125 @@ calcForwardingAddress sourceAddr instr_2 instr_3
     | unpack (rd instr_3) == sourceAddr && enableRegWrite instr_3 = ForwardingSourceMem
     | otherwise                                                   = NoForwarding
 
-topEntity :: HiddenClockResetEnable dom => Signal dom FromInstructionMem -> Signal dom FromDataMem -> (Signal dom ToInstructionMem, Signal dom ToDataMem)
-topEntity fim fdm = (tim, tdm)
-    where (tim, tdm, _) = pipeline fim fdm
+data WishBoneM2S bytes addressWidth
+  = WishBoneM2S
+  { -- | ADR
+    addr :: BitVector addressWidth
+    -- | DAT
+  , writeDataWB :: BitVector (8 * bytes)
+    -- | SEL
+  , select :: BitVector bytes
+    -- | CYC
+  , cycle :: Bool
+    -- | STB
+  , strobe :: Bool
+    -- | WE
+  , writeEnable :: Bool
+    -- | CTI
+  , cycleTypeIdentifier :: CycleTypeIdentifier
+    -- | BTE
+  , burstTypeExtension :: BurstTypeExtension
+  }
+
+data WishBoneS2M bytes
+  = WishBoneS2M
+  { -- | DAT
+    readData :: BitVector (8 * bytes)
+    -- | ACK
+  , acknowledge :: Bit
+    -- | ERR
+  , err :: Bit
+  }
+
+newtype CycleTypeIdentifier = CycleTypeIdentifier (BitVector 3)
+
+pattern Classic = CycleTypeIdentifier 0
+pattern ConstantAddressBurst = CycleTypeIdentifier 1
+pattern IncrementingBurst = CycleTypeIdentifier 2
+pattern EndOfBurst = CycleTypeIdentifier 7
+
+newtype BurstTypeExtension = BurstTypeExtension (BitVector 2)
+
+pattern LinearBurst = BurstTypeExtension 0
+pattern Beat4Burst = BurstTypeExtension 1
+pattern Beat8Burst = BurstTypeExtension 2
+
+{-# ANN topEntity
+    Synthesize
+        { t_name = "clash_riscv"
+        , t_inputs = [PortName "clk"
+                     ,PortName "reset"
+                     ,PortProduct ""
+                        [PortName "iBusWishbone_DAT_MISO"
+                        ,PortName "iBusWishbone_ACK"
+                        ,PortName "iBusWishbone_ERR"]
+                     ,PortProduct ""
+                        [PortName "dBusWishbone_DAT_MISO"
+                        ,PortName "dBusWishbone_ACK"
+                        ,PortName "dBusWishbone_ERR" ]
+                     ]
+        , t_output = PortProduct ""
+                        [ PortProduct ""
+                            [PortName "iBusWishbone_ADR"
+                            ,PortName "iBusWishbone_DAT_MOSI"
+                            ,PortName "iBusWishbone_SEL"
+                            ,PortName "iBusWishbone_CYC"
+                            ,PortName "iBusWishbone_STB"
+                            ,PortName "iBusWishbone_WE"
+                            ,PortName "iBusWishbone_CTI"
+                            ,PortName "iBusWishbone_BTE"]
+                        , PortProduct ""
+                            [PortName "dBusWishbone_ADR"
+                            ,PortName "dBusWishbone_DAT_MOSI"
+                            ,PortName "dBusWishbone_SEL"
+                            ,PortName "dBusWishbone_CYC"
+                            ,PortName "dBusWishbone_STB"
+                            ,PortName "dBusWishbone_WE"
+                            ,PortName "dBusWishbone_CTI"
+                            ,PortName "dBusWishbone_BTE"]
+                        ]
+        } #-}
+topEntity ::
+  Clock XilinxSystem ->
+  Reset XilinxSystem ->
+  Signal XilinxSystem (WishBoneS2M 4) ->
+  Signal XilinxSystem (WishBoneS2M 4) ->
+  (Signal XilinxSystem (WishBoneM2S 4 30), Signal XilinxSystem (WishBoneM2S 4 32))
+topEntity clk rst fimWB fdmWB = (timWB, tdmWB)
+    where (tim, tdm, _) = withClockResetEnable clk rst enableGen (pipeline fim fdm)
+          fim = (\(WishBoneS2M { readData = dat, acknowledge = ack }) ->
+                    FromInstructionMem
+                      { instruction = dat
+                      , instructionStall = not (bitCoerce ack)
+                      }) <$> fimWB
+          fdm = (\(WishBoneS2M { readData = dat, acknowledge = ack }) ->
+                    FromDataMem
+                        { memoryData = dat
+                        , memoryDataValid = bitCoerce ack
+                        }) <$> fdmWB
+
+          timWB = (\(ToInstructionMem addr) ->
+                        WishBoneM2S
+                          { addr = pack addr
+                          , writeDataWB = 0
+                          , select = maxBound
+                          , cycle = True
+                          , strobe = True
+                          , writeEnable = False
+                          , cycleTypeIdentifier = Classic
+                          , burstTypeExtension = LinearBurst
+                          }) <$> tim
+          tdmWB = (\(ToDataMem rdAddr wrAddr dat strb) ->
+                        WishBoneM2S
+                          { addr = if strb == 0 then pack rdAddr else pack wrAddr
+                          , writeDataWB = dat
+                          , select = strb
+                          , cycle = True
+                          , strobe = True
+                          , writeEnable = strb /= 0
+                          , cycleTypeIdentifier = Classic
+                          , burstTypeExtension = LinearBurst
+                          }) <$> tdm
 
 pipeline
     :: forall dom sync gated. HiddenClockResetEnable dom
