@@ -7,6 +7,7 @@ module Core.Pipeline where
 
 import GHC.Generics
 import Clash.Prelude hiding (select,cycle)
+import qualified Clash.Explicit.Prelude as Explicit
 
 import Data.Bool
 
@@ -134,28 +135,37 @@ topEntity ::
   (Signal XilinxSystem (WishBoneM2S 4 30), Signal XilinxSystem (WishBoneM2S 4 32))
 topEntity clk rst fimWB fdmWB = (timWB, tdmWB)
     where (tim, tdm, _) = withClockResetEnable clk rst enableGen (pipeline fim fdm)
-          fim = (\(WishBoneS2M { readData = dat, acknowledge = ack }) ->
+          fim = (\(WishBoneS2M { readData = dat, acknowledge = ack }) stb ->
                     FromInstructionMem
                       { instruction = dat
-                      , instructionStall = not (bitCoerce ack)
-                      }) <$> fimWB
+                      , instructionStall =
+                           -- We stall when there's no ACK
+                           not (bitCoerce ack) ||
+                           -- Or when it's the cycle after the ACK
+                           not stb
+                      }) <$> fimWB <*> instructionSTB
           fdm = (\(WishBoneS2M { readData = dat, acknowledge = ack }) ->
                     FromDataMem
                         { memoryData = dat
                         , memoryDataValid = bitCoerce ack
                         }) <$> fdmWB
 
-          timWB = (\(ToInstructionMem addr) ->
+          instrAck = (\(WishBoneS2M { acknowledge = ack }) -> bitCoerce ack) <$> fimWB
+          -- Deassert instruction STB 1 cycle after an acknowledgement
+          instructionSTB = Explicit.register clk rst enableGen True
+                             (mux instrAck (pure False) (pure True))
+
+          timWB = (\(ToInstructionMem addr) stb ->
                         WishBoneM2S
                           { addr = pack addr
                           , writeDataWB = 0
                           , select = maxBound
                           , cycle = True
-                          , strobe = True
+                          , strobe = stb
                           , writeEnable = False
                           , cycleTypeIdentifier = Classic
                           , burstTypeExtension = LinearBurst
-                          }) <$> tim
+                          }) <$> tim <*> instructionSTB
           tdmWB = (\(ToDataMem rdAddr wrAddr dat strb) ->
                         WishBoneM2S
                           { addr = if strb == 0 then pack rdAddr else pack wrAddr
